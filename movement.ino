@@ -21,6 +21,13 @@ const int pingFront = 7;
 const int pingRight = 8;
 const int pingLeft = 9;
 
+int sensorPin_FR = A0;
+int sensorPin_FL = A1;
+int sensorPin_Right = A2;
+
+int lightInitial;
+int lightInitialRight;
+
 void forward()
 {
   for(pos = 90; pos<=Distance; pos+=1)     
@@ -51,7 +58,7 @@ void halt()
 
 void turnRight()
 {
-  leftWheels.write(120);
+  leftWheels.write(121);
   delay(10);
   rightWheels.write(90);
   delay(10);
@@ -98,32 +105,79 @@ long microsecondsToInches(long microseconds) {
   return microseconds / 74 / 2;
 }
 
+int tapeDetectRight(){
+  int lightVal_Right = analogRead(sensorPin_Right);
+
+  Serial.print(lightVal_Right);
+
+  if(lightVal_Right > lightInitialRight + 50){
+    return 1;
+  } else {
+    return 0;
+  }
+}
+
+int tapeDetectFront(){
+  int lightVal_FR = analogRead(sensorPin_FR);
+  int lightVal_FL = analogRead(sensorPin_FL);
+  int lightVal_avg = (lightVal_FR+lightVal_FL)/2;
+  
+  Serial.print(lightVal_avg);
+  //if lightVal is less than our initial reading (lightInitial) minus 50 it is dark
+  //print 'Dark'. 
+  //Sensitivity = -50 (smaller, more sensitive)
+  
+  if (lightVal_avg > lightInitial + 50)
+  {
+    Serial.println("XXXXXXXXXXXXXXXXXX");
+    return 1;
+  }
+
+  //else, it is bright, print light
+  else
+  {
+    Serial.println("OOOOOOOOOOOOOOOOOO");
+    return 0;
+  }
+  delay(50); //delay half second between numbers
+}
+
 void setup()   /****** SETUP: RUNS ONCE ******/
 {
   leftWheels.attach(leftPIN);  // attaches the servo on pin 9 to the servo object
   rightWheels.attach(rightPIN);
 
+  pinMode(sensorPin_FR, INPUT); // we will be reading the photocell pin
+  pinMode(sensorPin_FL, INPUT);
+
   Serial.begin(9600);
+  
+  lightInitial = analogRead(sensorPin_FR);
+  lightInitialRight = analogRead(sensorPin_Right);
   
 }//--(end setup )---
 
 
 void loop()   /****** LOOP: RUNS CONSTANTLY ******/
 {
-  int ping_right = ping(20, pingRight);
+  int ping_right = ping(30, pingRight);
+  int tape_right = tapeDetectRight();
   Serial.print(ping_right);
-  if(ping_right == 1){
+  if(ping_right || tape_right){
     int ping_front = ping(20, pingFront);
+    int tape_front = tapeDetectFront();
     int ping_left = ping(20, pingLeft);
-    if(ping_front == 0){
+    if(!ping_front && !tape_front){
       forward();
       delay(1000);
-    } else if(ping_left == 0){
+    } else if(!ping_left){
       reverse();
       delay(1000);
       turnLeft();
       delay(1000);
     } else {
+      reverse();
+      delay(1000);
       reverse();
       delay(1000);
       turnRight();
