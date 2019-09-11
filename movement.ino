@@ -17,7 +17,9 @@ Servo rightWheels;
 int pos = 0;   // variable to store the servo position
 int rev = 0;
 
-const int pingPin = 7;
+const int pingFront = 7;
+const int pingRight = 8;
+const int pingLeft = 9;
 
 void forward()
 {
@@ -63,11 +65,11 @@ void turnLeft()
   delay(10);
 }
 
-int ping (int dist)
+int ping (int dist, int dir)
 {
   long inches[] = {0};
 
-  inches[0] = objDist();
+  inches[0] = objDist(dir);
 
   if(inches[0] < dist){
     return 1;
@@ -75,7 +77,7 @@ int ping (int dist)
   return 0;
 }
 
-long objDist() {
+long objDist(int pingPin) {
   long duration, inches;
 
   pinMode(pingPin, OUTPUT);
@@ -108,12 +110,41 @@ void setup()   /****** SETUP: RUNS ONCE ******/
 
 void loop()   /****** LOOP: RUNS CONSTANTLY ******/
 {
-  followWall();
+  int ping_right = ping(20, pingRight);
+  Serial.print(ping_right);
+  if(ping_right == 1){
+    int ping_front = ping(20, pingFront);
+    int ping_left = ping(20, pingLeft);
+    if(ping_front == 0){
+      forward();
+      delay(1000);
+    } else if(ping_left == 0){
+      reverse();
+      delay(1000);
+      turnLeft();
+      delay(1000);
+    } else {
+      reverse();
+      delay(1000);
+      turnRight();
+      delay(1000);
+    }
+
+  } else {
+    reverse();
+    delay(500);
+    turnRight();
+    delay(1000);
+    forward();
+    delay(1000);
+    halt();
+    delay(1000);
+  }
       
 }//--(end main loop )---
 
 void followWall() {
-  int ping_s = ping(20);
+  int ping_s = ping(20, pingRight);
   Serial.print(ping_s);
   if (ping_s == 1) {
     forward();
@@ -124,8 +155,8 @@ void followWall() {
   }
 }
 
-void detect_turnRight() {
-  int ping_s = ping(10);
+void obstacle_front() {
+  int ping_s = ping(10, pingFront);
   Serial.print(ping_s);
   if (ping_s == 1) {
     halt();
