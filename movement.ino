@@ -7,7 +7,7 @@
 #define leftPIN  10
 #define rightPIN 11
 
-#define Distance  98 // Forward: 90 to 180, Backwards: 0 to 90. 
+#define Distance  97 // Forward: 90 to 180, Backwards: 0 to 90. 
 
 /*-----( Declare objects )-----*/
 Servo leftWheels;  // create servo object to control a servo 
@@ -28,26 +28,18 @@ int sensorPin_Right = A2;
 int lightInitial;
 int lightInitialRight;
 
-void forward()
+void forward(int dist)
 {
-  for(pos = 90; pos<=Distance; pos+=1)     
-  {
-    leftWheels.write(pos);
-    delay(10);
-    rightWheels.write(pos);            
-    delay(10);                       
-  }
+  leftWheels.write(dist);
+  rightWheels.write(dist);                                 
 }
 
-void reverse()
+void reverse(int dist)
 {
-  for(pos = 90; pos >= 80; pos-=1)
-  {
-    leftWheels.write(pos);
-    delay(10);
-    rightWheels.write(pos);
-    delay(10);
-  }
+  int converted = 90 - (dist-90);
+  leftWheels.write(converted);
+  rightWheels.write(converted);
+
 }
 
 void halt()
@@ -58,18 +50,14 @@ void halt()
 
 void turnRight()
 {
-  leftWheels.write(121);
-  delay(10);
+  leftWheels.write(122);
   rightWheels.write(90);
-  delay(10);
 }
 
 void turnLeft()
 {
   rightWheels.write(121);
-  delay(10);
   leftWheels.write(90);
-  delay(10);
 }
 
 int ping (int dist, int dir)
@@ -160,39 +148,54 @@ void setup()   /****** SETUP: RUNS ONCE ******/
 
 void loop()   /****** LOOP: RUNS CONSTANTLY ******/
 {
+  int speed = 96;
+  
   int ping_right = ping(30, pingRight);
   int tape_right = tapeDetectRight();
+  int ping_front = ping(20, pingFront);
+  int tape_front = tapeDetectFront();
   Serial.print(ping_right);
-  if(ping_right || tape_right){
-    int ping_front = ping(20, pingFront);
-    int tape_front = tapeDetectFront();
+  if(ping_right){// || tape_right){
     int ping_left = ping(20, pingLeft);
     if(!ping_front && !tape_front){
-      forward();
-      delay(1000);
+      forward(100);
+      delay(100);
     } else if(!ping_left){
-      reverse();
+      reverse(97);
       delay(1000);
       turnLeft();
       delay(1000);
     } else {
-      reverse();
+      reverse(97);
       delay(1000);
-      reverse();
-      delay(1000);
+      //reverse(speed);
+      //delay(100);
       turnRight();
       delay(1000);
+      forward(100);
+      delay(100);
     }
 
   } else {
-    reverse();
-    delay(500);
-    turnRight();
-    delay(1000);
-    forward();
-    delay(1000);
-    halt();
-    delay(1000);
+    //reverse(speed);
+    //delay(100);
+    if(!ping_front && !tape_front){
+      turnRight();
+      delay(1000);
+      forward(104);
+      delay(2000);
+    } else {
+      reverse(97);
+      delay(1000);
+      turnRight();
+      delay(1000);
+      forward(100);
+      delay(100);
+    }
+
+    //forward(speed);
+    //halt();
+    //delay(100);
   }
       
 }//--(end main loop )---
@@ -201,7 +204,7 @@ void followWall() {
   int ping_s = ping(20, pingRight);
   Serial.print(ping_s);
   if (ping_s == 1) {
-    forward();
+    forward(97);
     delay(1000);
   } else {
     turnRight();
@@ -215,15 +218,15 @@ void obstacle_front() {
   if (ping_s == 1) {
     halt();
     delay(1000);
-    reverse();
+    reverse(97);
     delay(1000);
     turnRight();
     delay(1000);
     Serial.print(ping_s);
     Serial.print("\nshould halt");
   } else {
-    forward();
-    delay(1000);
+    forward(97);
+    delay(100);
     Serial.print("\nshould go forward");
     //Serial.print(ping());
   }
