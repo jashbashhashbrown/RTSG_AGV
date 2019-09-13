@@ -24,6 +24,13 @@ const int pingLeft = 9;
 int sensorPin_FR = A0;
 int sensorPin_FL = A1;
 int sensorPin_Right = A2;
+int photocellLft = A3; // shortcut to refer to the photocell pin later
+int photocellRgt = A4;
+
+int dark_rm_val = 590;
+int dark_rm_val2 = 505;
+int lftPhoto; // initialize a new integer to store the photocell value
+int rgtPhoto;
 
 int lightInitial;
 int lightInitialRight;
@@ -50,13 +57,13 @@ void halt()
 
 void turnRight()
 {
-  leftWheels.write(122);
-  rightWheels.write(90);
+  leftWheels.write(108); //112
+  rightWheels.write(90); //66
 }
 
 void turnLeft()
 {
-  rightWheels.write(121);
+  rightWheels.write(114); //126
   leftWheels.write(90);
 }
 
@@ -130,6 +137,7 @@ int tapeDetectFront(){
   delay(50); //delay half second between numbers
 }
 
+
 void setup()   /****** SETUP: RUNS ONCE ******/
 {
   leftWheels.attach(leftPIN);  // attaches the servo on pin 9 to the servo object
@@ -137,6 +145,9 @@ void setup()   /****** SETUP: RUNS ONCE ******/
 
   pinMode(sensorPin_FR, INPUT); // we will be reading the photocell pin
   pinMode(sensorPin_FL, INPUT);
+
+  pinMode(photocellLft, INPUT); // we will be reading the photocell pin
+  pinMode(photocellRgt, INPUT);
 
   Serial.begin(9600);
   
@@ -161,12 +172,14 @@ void loop()   /****** LOOP: RUNS CONSTANTLY ******/
       forward(100);
       delay(100);
     } else if(!ping_left){
-      reverse(97);
+      reverse(100);
       delay(1000);
       turnLeft();
       delay(1000);
+      forward(speed);
+      delay(100);
     } else {
-      reverse(97);
+      reverse(104);
       delay(1000);
       //reverse(speed);
       //delay(100);
@@ -177,21 +190,46 @@ void loop()   /****** LOOP: RUNS CONSTANTLY ******/
     }
 
   } else {
-    //reverse(speed);
-    //delay(100);
-    if(!ping_front && !tape_front){
-      turnRight();
-      delay(1000);
-      forward(104);
-      delay(2000);
-    } else {
-      reverse(97);
-      delay(1000);
-      turnRight();
-      delay(1000);
+    turnRight();
+    delay(1000);
+    if(is_dark_rm()){
+      Serial.print("IN DARK ROOM\n");
+      Serial.println(lftPhoto);
+      Serial.println(rgtPhoto);
+      go_twrd_light();
+    }
+    Serial.print("is dark = ");
+    Serial.println(lftPhoto);
+    Serial.println(rgtPhoto);
+    Serial.print("##");
+    int ping_front = ping(20, pingFront);
+    while(!ping_right && !ping_front){
+      Serial.print(ping_front);
+      ping_right = ping(30, pingRight);
+      ping_front = ping(20, pingFront);
       forward(100);
       delay(100);
     }
+    if(ping_front){
+      reverse(98);
+      delay(1000);
+      turnLeft();
+      delay(1000);
+    }
+
+//    if(!ping_front) { /* && !tape_front){*/
+//      turnRight();
+//      delay(1000);
+//      forward(104);
+//      delay(2000);
+//    } else {
+//      //reverse(97);
+//      //delay(1000);
+//      turnRight();
+//      delay(1000);
+//      forward(104);
+//      delay(2000);
+//    }
 
     //forward(speed);
     //halt();
@@ -199,6 +237,51 @@ void loop()   /****** LOOP: RUNS CONSTANTLY ******/
   }
       
 }//--(end main loop )---
+
+void light_read(){
+  lftPhoto = analogRead(photocellLft); // do the analog read and store the value
+  rgtPhoto = analogRead(photocellRgt) + 130;
+  //Serial.println("leftPhoto");
+  //Serial.println(lftPhoto); // push the most recent value to the computer
+  delay(200);
+  /*Serial.println("rightPhoto");
+  Serial.println(rgtPhoto);*/
+  delay(200); // slow the loop down a bit before it repeats*/
+}
+
+void go_twrd_light(){
+  while(1){
+    //Serial.println("in go_twrd_light");
+    light_read();
+    Serial.println(lftPhoto);
+    Serial.println(rgtPhoto);
+    if (lftPhoto >= rgtPhoto+60){
+      Serial.println("turn right");
+      turnRight();
+      delay(650);
+      halt();
+    } else if (rgtPhoto >= lftPhoto+20){
+      Serial.println("turn left");
+      turnLeft();
+      delay(650);
+      halt();
+    } else { //(abs(lftPhoto - rgtPhoto) <=60)
+      Serial.println("forward");
+      forward(100);
+      delay(100);
+    } 
+  }
+}
+
+
+bool is_dark_rm() {
+  bool found = false;
+  light_read();
+  if (lftPhoto >= dark_rm_val && rgtPhoto >= dark_rm_val2){
+   found = true;
+  }
+  return found;
+}
 
 void followWall() {
   int ping_s = ping(20, pingRight);
@@ -211,6 +294,7 @@ void followWall() {
     delay(500);
   }
 }
+
 
 void obstacle_front() {
   int ping_s = ping(10, pingFront);
