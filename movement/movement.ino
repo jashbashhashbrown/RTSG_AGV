@@ -121,6 +121,9 @@ void loop()   /****** LOOP: RUNS CONSTANTLY ******/
 
 /* -------------( SENSOR FUNCTIONS ) ------------------*/
 
+/*
+ * light_read(): sensor function that detects light and chenged global values.
+ */
 void light_read(){
   lftPhoto = analogRead(photocellLft); // do the analog read and store the value
   rgtPhoto = analogRead(photocellRgt) + 130;
@@ -132,6 +135,11 @@ void light_read(){
   delay(200); // slow the loop down a bit before it repeats*/
 }
 
+/*
+ * go_twrd_light(): movement function reactionary to light. Detects light in front of, front-left, and front-right of the
+ * vehicle. Goes front if there is not a bigger difference of 60 between both sensors, the vehcile will move forward. If
+ * the difference is greater, it will turn in the direction with the greater magnitude of light recieved.
+ */
 void go_twrd_light(){
   while(1){
     //Serial.println("in go_twrd_light");
@@ -156,7 +164,10 @@ void go_twrd_light(){
   }
 }
 
-
+/*
+ * is_dark_rm(): boolean function that returns a true if the room is dark; a false is the room is
+ * light. The light values are captured through the function 'light_read().'
+ */
 bool is_dark_rm() {
   bool found = false;
   light_read();
@@ -166,6 +177,12 @@ bool is_dark_rm() {
   return found;
 }
 
+/*
+ * ping: A sensor function that detect the distance of the closest obstacle in the inputted
+ * direction and returns a boolean value.
+ * Input: takes a maximum distance function and a direction. The direction dictates what ping sensor is used,
+ * the distance detects the limit of when to return an obstacle has been detected.
+ */
 int ping (int dist, int dir)
 {
   long inches[] = {0};
@@ -178,6 +195,9 @@ int ping (int dist, int dir)
   return 0;
 }
 
+/*
+ * objDist: returns the distance of the obstacle from the designated ping sensor
+ */
 long objDist(int pingPin) {
   long duration, inches;
 
@@ -199,6 +219,10 @@ long microsecondsToInches(long microseconds) {
   return microseconds / 74 / 2;
 }
 
+/*
+ * tapeDetectRight(): sensor function that detects tape to the right of the vehcile.
+ * The sensor was not optimal and this function was not used.
+ */
 int tapeDetectRight(){
   int lightVal_Right = analogRead(sensorPin_Right);
 
@@ -238,6 +262,11 @@ int tapeDetectFront(){
 
 /*-------( MOVEMENT BASED FUNCTIONS ) -------------------*/
 
+/*
+ * followWall: movement function that uses ping sensor to detect if there is a wall to the
+ * right of the vehcile. If there is a obstacle or wall, the vehicle moves forward. Else, 
+ * the vehcile moves straight.
+ */
 void followWall() {
   int ping_s = ping(20, pingRight);
   Serial.print(ping_s);
@@ -250,7 +279,10 @@ void followWall() {
   }
 }
 
-
+/*
+ * obstacle_front: movement function that utilzies the forward ping sensor. Moves forward if the
+ * ping sensor does not detect an obstacle within the range of 10. Else, the vehcile turns right.
+ */
 void obstacle_front() {
   int ping_s = ping(10, pingFront);
   Serial.print(ping_s);
